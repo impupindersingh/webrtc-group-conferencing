@@ -1,11 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brisk Meet</title>
-</head>
-<body>
-    This is going to be the landing page 🚀
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/styles.css" />
+    <title>BriskMeet</title>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">BriskMeet</div>
+      <select class="camera-select"></select>
+    </nav>
+    <main class="main">
+      <div class="create-join">
+        <div class="text">
+          <div class="head">Create Video Meetings in one click.</div>
+          <div class="subtext">No sign ups required. Open Source platform.</div>
+        </div>
+        <button class="createroom unselectable">Create Room</button>
+        <input
+          type="text"
+          name="room"
+          spellcheck="false"
+          placeholder="Enter Room Code"
+          class="roomcode"
+        /><br />
+        <div class="joinroom unselectable">Join Room</div>
+      </div>
+      <div class="video-cont">
+        <video class="video-self" autoplay muted playsinline></video>
+        <div class="settings">
+            <div class="device mic">🎤</div>
+            <div class="device webcam">📸</div>
+        </div>
+      </div>
+    </main>
+  </body>
 </html>
