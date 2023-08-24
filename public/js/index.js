@@ -65,3 +65,12 @@ cameraDropdown.addEventListener("change", () => {
   const deviceIdOfSelectedCamera = cameraDropdown.value;
   switchCamera(deviceIdOfSelectedCamera);
 });
+
+createButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  createButton.disabled = true;
+  createButton.innerHTML = "Creating Room";
+  createButton.classList = "createroom-clicked";
+
+  location.href = `/room.html?room=${uuidv4()}`;
+});
