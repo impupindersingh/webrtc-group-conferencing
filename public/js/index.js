@@ -18,6 +18,7 @@ async function getAllDevices() {
   } else {
     try {
       let devices = await navigator.mediaDevices.enumerateDevices();
+      console.log(devices);
       devices.forEach((device, index) => {
         if (device.kind === "videoinput") {
           console.log(index, device);
@@ -33,5 +34,28 @@ async function getAllDevices() {
     }
   }
 }
+async function updateCameraLocalStream() {
+  try {
+    const localStream = await navigator.mediaDevices.getUserMedia(
+      mediaConstraints
+    );
+    videoCont.srcObject = localStream;
+  } catch (err) {
+    console.log("Error accessing camera: ", err);
+  }
+}
+
+function switchCamera(deviceId) {
+  mediaConstraints.video = { deviceId: { exact: deviceId } };
+  console.log({ mediaConstraints });
+
+  updateCameraLocalStream();
+}
 
 getAllDevices();
+updateCameraLocalStream();
+
+cameraDropdown.addEventListener("change", () => {
+  const deviceIdOfSelectedCamera = cameraDropdown.value;
+  switchCamera(deviceIdOfSelectedCamera);
+});
