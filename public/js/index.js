@@ -89,3 +89,20 @@ createButton.addEventListener("click", (e) => {
   }, 500);
   // location.href = `/room.html?room=${uuidv4()}`;
 });
+
+joinButton.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (codeCont.value.trim() == "") {
+    codeCont.classList.add("roomcode-error");
+    return;
+  }
+  const code = codeCont.value;
+  location.href = `/room.html?room=${code}`;
+});
+
+codeCont.addEventListener("change", () => {
+  if (codeCont.value.trim() !== "") {
+    codeCont.classList.remove("roomcode-error");
+    return;
+  }
+});
