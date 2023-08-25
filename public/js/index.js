@@ -132,3 +132,18 @@ cam.addEventListener("click", () => {
     camAllowed = 1;
   }
 });
+
+mic.addEventListener("click", () => {
+  if (micAllowed) {
+    mediaConstraints = { video: camAllowed ? true : false, audio: false };
+    updateCameraLocalStream();
+    mic.classList = "nodevice";
+    mic.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
+    micAllowed = 0;
+  } else {
+    mediaConstraints = { video: camAllowed ? true : false, audio: true };
+    mic.classList = "device";
+    mic.innerHTML = `<i class="fas fa-microphone"></i>`;
+    micAllowed = 1;
+  }
+});
