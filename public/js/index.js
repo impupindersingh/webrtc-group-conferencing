@@ -106,3 +106,29 @@ codeCont.addEventListener("change", () => {
     return;
   }
 });
+
+cam.addEventListener("click", () => {
+  if (camAllowed) {
+    mediaConstraints = { video: false, audio: micAllowed ? true : false };
+    navigator.mediaDevices
+      .getUserMedia(mediaConstraints)
+      .then((localstream) => {
+        videoCont.srcObject = localstream;
+      });
+
+    cam.classList = "nodevice";
+    cam.innerHTML = `<i class="fas fa-video-slash"></i>`;
+    camAllowed = 0;
+  } else {
+    mediaConstraints = { video: true, audio: micAllowed ? true : false };
+    navigator.mediaDevices
+      .getUserMedia(mediaConstraints)
+      .then((localstream) => {
+        videoCont.srcObject = localstream;
+      });
+
+    cam.classList = "device";
+    cam.innerHTML = `<i class="fas fa-video"></i>`;
+    camAllowed = 1;
+  }
+});
