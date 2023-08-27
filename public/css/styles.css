@@ -207,3 +207,63 @@ body {
     margin-bottom: 100px;
   }
 }
+
+.overlay {
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  background-color: #393e46;
+}
+.overlay .box {
+  width: 25%;
+  margin: 0 auto;
+  height: 200px;
+  background-color: #ffffff;
+  margin-top: 100px;
+  border-radius: 10px;
+  text-align: center;
+}
+.overlay .box .head-name {
+  padding-top: 20px;
+  text-align: center;
+  color: #393e46;
+  font-weight: bold;
+}
+.overlay .box .name-field {
+  margin: 0px auto;
+  margin-top: 20px;
+  border: 0;
+  font-weight: bold;
+  padding: 10px;
+  width: 90%;
+  border-bottom: 3px solid #4ecca3;
+  color: #393e46;
+  height: 40px;
+}
+.overlay .box .name-field:focus {
+  outline: none;
+}
+.overlay .box .continue-name {
+  border: none;
+  margin: 0 auto;
+  margin-top: 30px;
+  color: #ffffff;
+  font-weight: bold;
+  background-color: #4ecca3;
+  padding: 12px 20px;
+  border-radius: 10px;
+  transition: opacity 0.5s;
+}
+.overlay .box .continue-name:hover {
+  opacity: 0.8;
+  cursor: pointer;
+}
+.overlay .box .continue-name:focus {
+  outline: 0;
+}
+
