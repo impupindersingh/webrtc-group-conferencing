@@ -24,3 +24,18 @@ const whiteboardCont = document.querySelector(".whiteboard-cont");
 const canvas = document.querySelector("#whiteboard");
 const ctx = canvas.getContext("2d");
 
+continueButt.addEventListener("click", () => {
+  if (nameField.value === "") return;
+  username = nameField.value;
+  overlayContainer.style.visibility = "hidden";
+  document.querySelector("#name").innerHTML = `${username} (You)`;
+  socket.emit("join room", roomid, username);
+});
+
+nameField.addEventListener("keyup", (event) => {
+  event.preventDefault();
+  if (event.keycode === 13) {
+    // i.e. enter key
+    continueButt.click();
+  }
+});
