@@ -19,11 +19,43 @@ const screenShareButt = document.querySelector(".screenshare");
 const whiteboardButt = document.querySelector(".board-icon");
 const cameraDropdown = document.getElementById("camera-select");
 cameraDropdown.innerHTML = "";
+
+continueButt.addEventListener("click", () => {
+  if (nameField.value === "") return;
+  username = nameField.value;
+  overlayContainer.style.visibility = "hidden";
+  document.querySelector("#name").innerHTML = `${username} (You)`;
+  socket.emit("join room", roomid, username);
+});
+
+nameField.addEventListener("keyup", (event) => {
+  event.preventDefault();
+  if (event.keyCode === 13) {
+    // i.e. enter key
+    continueButt.click();
+  }
+});
+
+let videoAllowed = 1;
+let audioAllowed = 1;
+let micInfo = {};
+let videoInfo = {};
+let videoTrackReceived = {};
+let mediaConstraints = { video: true, audio: true };
+
+let mymuteicon = document.querySelector("#mymuteicon");
+let myvideooff = document.querySelector("#myvideooff");
+
+mymuteicon.style.visibility = "hidden";
+myvideooff.style.visibility = "hidden";
+
+
 //whiteboard js start
 const whiteboardCont = document.querySelector(".whiteboard-cont");
 const canvas = document.querySelector("#whiteboard");
 const ctx = canvas.getContext("2d");
 
+whiteboardCont.style.visibility = "hidden";
 let boardVisible = false;
 let isDrawing = 0;
 let x = 0;
@@ -135,20 +167,3 @@ socket.on("draw", (newX, newY, prevX, prevY, color, size) => {
 });
 
 //whiteboard js end
-whiteboardCont.style.visibility = "hidden";
-
-continueButt.addEventListener("click", () => {
-  if (nameField.value === "") return;
-  username = nameField.value;
-  overlayContainer.style.visibility = "hidden";
-  document.querySelector("#name").innerHTML = `${username} (You)`;
-  socket.emit("join room", roomid, username);
-});
-
-nameField.addEventListener("keyup", (event) => {
-  event.preventDefault();
-  if (event.keyCode === 13) {
-    // i.e. enter key
-    continueButt.click();
-  }
-});
