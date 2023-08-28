@@ -24,6 +24,22 @@ const whiteboardCont = document.querySelector(".whiteboard-cont");
 const canvas = document.querySelector("#whiteboard");
 const ctx = canvas.getContext("2d");
 
+let boardVisible = false;
+let isDrawing = 0;
+let x = 0;
+let y = 0;
+let color = "black";
+let drawSize = 3;
+let colorRemote = "black";
+let drawSizeRemote = 3;
+
+function fitToContainer(canvas) {
+  canvas.style.width = "100%";
+  canvas.style.height = "100%";
+}
+
+fitToContainer(canvas);
+
 continueButt.addEventListener("click", () => {
   if (nameField.value === "") return;
   username = nameField.value;
