@@ -49,6 +49,38 @@ let myvideooff = document.querySelector("#myvideooff");
 mymuteicon.style.visibility = "hidden";
 myvideooff.style.visibility = "hidden";
 
+const configuration = { iceServers: [{ urls: "stun:stun.stunprotocol.org" }] };
+
+let connections = {};
+let cName = {};
+let audioTrackSent = {};
+let videoTrackSent = {};
+
+let myStream, myscreenshare;
+
+document.querySelector(".roomcode").innerHTML = `${roomid}`;
+let videoDevices = [];
+
+(async function getAllDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    console.log("enumerateDevices() is not supported by the browser.");
+  } else {
+    try {
+      let devices = await navigator.mediaDevices.enumerateDevices();
+      devices.forEach((device, index) => {
+        if (device.kind === "videoinput") {
+          videoDevices.push(device);
+          const option = document.createElement("option");
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${cameraDropdown.length + 1}`;
+          cameraDropdown.appendChild(option);
+        }
+      });
+    } catch (err) {
+      console.error(`${err.name}: ${err.message}`);
+    }
+  }
+})();
 
 //whiteboard js start
 const whiteboardCont = document.querySelector(".whiteboard-cont");
