@@ -108,6 +108,46 @@ function CopyClassText() {
   }, 5000);
 }
 
+let recorders = [];
+
+async function StartRecordSession() {
+  var sar = document.getElementById("startRecording");
+  sar.style.display = "none";
+  var str = document.getElementById("stopRecording");
+  str.style.display = "block";
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter((device) => device.kind === "videoinput");
+
+  const streams = await Promise.all(
+    videoDevices.map((device) =>
+      navigator.mediaDevices.getUserMedia({
+        video: { deviceId: device.deviceId },
+        audio: true,
+      })
+    )
+  );
+
+  for (let i = 0; i < streams.length; i++) {
+    const stream = streams[i];
+    const recorder = RecordRTC(stream, { type: "video" });
+    recorder.startRecording();
+    recorders.push(recorder);
+  }
+}
+
+function StopsRecordSession() {
+  var sar = document.getElementById("startRecording");
+  sar.style.display = "block";
+  var str = document.getElementById("stopRecording");
+  str.style.display = "none";
+  recorders.forEach((recorder) => {
+    recorder.stopRecording(function () {
+      let blob = recorder.getBlob();
+      invokeSaveAsDialog(blob);
+    });
+  });
+}
+
 //whiteboard js start
 const whiteboardCont = document.querySelector(".whiteboard-cont");
 const canvas = document.querySelector("#whiteboard");
