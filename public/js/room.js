@@ -82,6 +82,32 @@ let videoDevices = [];
   }
 })();
 
+function CopyClassText() {
+  let textToCopy = document.querySelector(".roomcode");
+  let currentRange;
+  if (document.getSelection().rangeCount > 0) {
+    currentRange = document.getSelection().getRangeAt(0);
+    window.getSelection().removeRange(currentRange);
+  } else {
+    currentRange = false;
+  }
+
+  let copyRange = document.createRange();
+  copyRange.selectNode(textToCopy);
+  window.getSelection().addRange(copyRange);
+  document.execCommand("copy");
+  window.getSelection().removeRange(copyRange);
+
+  if (currentRange) {
+    window.getSelection().addRange(currentRange);
+  }
+
+  document.querySelector(".copycode-button").textContent = "Copied!";
+  setTimeout(() => {
+    document.querySelector(".copycode-button").textContent = "Copy Code";
+  }, 5000);
+}
+
 //whiteboard js start
 const whiteboardCont = document.querySelector(".whiteboard-cont");
 const canvas = document.querySelector("#whiteboard");
