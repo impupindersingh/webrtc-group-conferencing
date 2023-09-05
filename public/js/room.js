@@ -24,7 +24,7 @@ continueButt.addEventListener("click", () => {
   if (nameField.value === "") return;
   username = nameField.value;
   overlayContainer.style.visibility = "hidden";
-  document.querySelector("#name").innerHTML = `${username} (You)`;
+  document.querySelector("#myname").innerHTML = `${username} (You)`;
   socket.emit("join room", roomid, username);
 });
 
