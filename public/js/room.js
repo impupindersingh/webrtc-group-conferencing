@@ -19,156 +19,33 @@ const screenShareButt = document.querySelector(".screenshare");
 const whiteboardButt = document.querySelector(".board-icon");
 const cameraDropdown = document.getElementById("camera-select");
 cameraDropdown.innerHTML = "";
-
-continueButt.addEventListener("click", () => {
-  if (nameField.value === "") return;
-  username = nameField.value;
-  overlayContainer.style.visibility = "hidden";
-  document.querySelector("#myname").innerHTML = `${username} (You)`;
-  socket.emit("join room", roomid, username);
-});
-
-nameField.addEventListener("keyup", (event) => {
-  event.preventDefault();
-  if (event.keyCode === 13) {
-    // i.e. enter key
-    continueButt.click();
-  }
-});
-
-let videoAllowed = 1;
-let audioAllowed = 1;
-let micInfo = {};
-let videoInfo = {};
-let videoTrackReceived = {};
-let mediaConstraints = { video: true, audio: true };
-
-let mymuteicon = document.querySelector("#mymuteicon");
-let myvideooff = document.querySelector("#myvideooff");
-
-mymuteicon.style.visibility = "hidden";
-myvideooff.style.visibility = "hidden";
-
-const configuration = { iceServers: [{ urls: "stun:stun.stunprotocol.org" }] };
-
-let connections = {};
-let cName = {};
-let audioTrackSent = {};
-let videoTrackSent = {};
-
-let myStream, myscreenshare;
-
-document.querySelector(".roomcode").innerHTML = `${roomid}`;
-let videoDevices = [];
-
-(async function getAllDevices() {
-  if (!navigator.mediaDevices?.enumerateDevices) {
-    console.log("enumerateDevices() is not supported by the browser.");
-  } else {
-    try {
-      let devices = await navigator.mediaDevices.enumerateDevices();
-      devices.forEach((device, index) => {
-        if (device.kind === "videoinput") {
-          videoDevices.push(device);
-          const option = document.createElement("option");
-          option.value = device.deviceId;
-          option.text = device.label || `Camera ${cameraDropdown.length + 1}`;
-          cameraDropdown.appendChild(option);
-        }
-      });
-    } catch (err) {
-      console.error(`${err.name}: ${err.message}`);
-    }
-  }
-})();
-
-function CopyClassText() {
-  let textToCopy = document.querySelector(".roomcode");
-  let currentRange;
-  if (document.getSelection().rangeCount > 0) {
-    currentRange = document.getSelection().getRangeAt(0);
-    window.getSelection().removeRange(currentRange);
-  } else {
-    currentRange = false;
-  }
-
-  let copyRange = document.createRange();
-  copyRange.selectNode(textToCopy);
-  window.getSelection().addRange(copyRange);
-  document.execCommand("copy");
-  window.getSelection().removeRange(copyRange);
-
-  if (currentRange) {
-    window.getSelection().addRange(currentRange);
-  }
-
-  document.querySelector(".copycode-button").textContent = "Copied!";
-  setTimeout(() => {
-    document.querySelector(".copycode-button").textContent = "Copy Code";
-  }, 5000);
-}
-
-let recorders = [];
-
-async function StartRecordSession() {
-  var sar = document.getElementById("startRecording");
-  sar.style.display = "none";
-  var str = document.getElementById("stopRecording");
-  str.style.display = "block";
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const videoDevices = devices.filter((device) => device.kind === "videoinput");
-
-  const streams = await Promise.all(
-    videoDevices.map((device) =>
-      navigator.mediaDevices.getUserMedia({
-        video: { deviceId: device.deviceId },
-        audio: true,
-      })
-    )
-  );
-
-  for (let i = 0; i < streams.length; i++) {
-    const stream = streams[i];
-    const recorder = RecordRTC(stream, { type: "video" });
-    recorder.startRecording();
-    recorders.push(recorder);
-  }
-}
-
-function StopsRecordSession() {
-  var sar = document.getElementById("startRecording");
-  sar.style.display = "block";
-  var str = document.getElementById("stopRecording");
-  str.style.display = "none";
-  recorders.forEach((recorder) => {
-    recorder.stopRecording(function () {
-      let blob = recorder.getBlob();
-      invokeSaveAsDialog(blob);
-    });
-  });
-}
-
 //whiteboard js start
 const whiteboardCont = document.querySelector(".whiteboard-cont");
 const canvas = document.querySelector("#whiteboard");
 const ctx = canvas.getContext("2d");
 
+let boardVisisble = false;
+
 whiteboardCont.style.visibility = "hidden";
-let boardVisible = false;
+
 let isDrawing = 0;
 let x = 0;
 let y = 0;
 let color = "black";
-let drawSize = 3;
+let drawsize = 3;
 let colorRemote = "black";
-let drawSizeRemote = 3;
+let drawsizeRemote = 3;
 
 function fitToContainer(canvas) {
   canvas.style.width = "100%";
   canvas.style.height = "100%";
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
 }
 
 fitToContainer(canvas);
+
+//getCanvas call is under join room call
 socket.on("getCanvas", (url) => {
   let img = new Image();
   img.onload = start;
@@ -265,3 +142,362 @@ socket.on("draw", (newX, newY, prevX, prevY, color, size) => {
 });
 
 //whiteboard js end
+
+let videoAllowed = 1;
+let audioAllowed = 1;
+
+let micInfo = {};
+let videoInfo = {};
+
+let videoTrackReceived = {};
+
+let mymuteicon = document.querySelector("#mymuteicon");
+mymuteicon.style.visibility = "hidden";
+
+let myvideooff = document.querySelector("#myvideooff");
+myvideooff.style.visibility = "hidden";
+
+const configuration = { iceServers: [{ urls: "stun:stun.stunprotocol.org" }] };
+
+const mediaConstraints = { video: true, audio: true };
+
+let connections = {};
+let cName = {};
+let audioTrackSent = {};
+let videoTrackSent = {};
+
+let mystream, myscreenshare;
+
+document.querySelector(".roomcode").innerHTML = `${roomid}`;
+let videoDevices = [];
+(async function getAllDevices() {
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    console.log("enumerateDevices() not supported.");
+  } else {
+    // List cameras and microphones.
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then((devices) => {
+        devices.forEach((device, index) => {
+          //   console.log(
+          //     `${device.kind}: ${device.label} id = ${device.deviceId}`
+          //   );
+          if (device.kind === "videoinput") {
+            console.log(device, index);
+            videoDevices.push(device);
+            const option = document.createElement("option");
+            option.value = device.deviceId;
+            option.text = device.label || `Camera ${cameraDropdown.length + 1}`;
+            cameraDropdown.appendChild(option);
+          }
+        });
+        // devices.forEach((device) => {
+        //   if (device.kind === "videoinput") {
+        //     navigator.mediaDevices
+        //       .getUserMedia({ video: { deviceId: device.deviceId } })
+        //       .then((stream) => {
+        //         const videoElement = document.createElement("video");
+        //         videoElement.srcObject = stream;
+        //         videoElement.autoplay = true;
+        //         document.body.appendChild(videoElement);
+        //       })
+        //       .catch((error) => {
+        //         console.error(`${error.name}: ${error.message}`);
+        //       });
+        //   }
+        // });
+      })
+      .catch((err) => {
+        console.error(`${err.name}: ${err.message}`);
+      });
+  }
+})();
+function CopyClassText() {
+  var textToCopy = document.querySelector(".roomcode");
+  var currentRange;
+  if (document.getSelection().rangeCount > 0) {
+    currentRange = document.getSelection().getRangeAt(0);
+    window.getSelection().removeRange(currentRange);
+  } else {
+    currentRange = false;
+  }
+
+  var CopyRange = document.createRange();
+  CopyRange.selectNode(textToCopy);
+  window.getSelection().addRange(CopyRange);
+  document.execCommand("copy");
+
+  window.getSelection().removeRange(CopyRange);
+
+  if (currentRange) {
+    window.getSelection().addRange(currentRange);
+  }
+
+  document.querySelector(".copycode-button").textContent = "Copied!";
+  setTimeout(() => {
+    document.querySelector(".copycode-button").textContent = "Copy Code";
+  }, 5000);
+}
+let recorders = [];
+
+async function StartRecordSession() {
+  var sar = document.getElementById("startRecording");
+  sar.style.display = "none";
+  var str = document.getElementById("stopRecording");
+  str.style.display = "block";
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter((device) => device.kind === "videoinput");
+
+  const streams = await Promise.all(
+    videoDevices.map((device) =>
+      navigator.mediaDevices.getUserMedia({
+        video: { deviceId: device.deviceId },
+        audio: true,
+      })
+    )
+  );
+
+  for (let i = 0; i < streams.length; i++) {
+    const stream = streams[i];
+    const recorder = RecordRTC(stream, { type: "video" });
+    recorder.startRecording();
+    recorders.push(recorder);
+  }
+}
+
+function StopsRecordSession() {
+  var sar = document.getElementById("startRecording");
+  sar.style.display = "block";
+  var str = document.getElementById("stopRecording");
+  str.style.display = "none";
+  recorders.forEach((recorder) => {
+    recorder.stopRecording(function () {
+      let blob = recorder.getBlob();
+      invokeSaveAsDialog(blob);
+    });
+  });
+}
+
+continueButt.addEventListener("click", () => {
+  if (nameField.value == "") return;
+  username = nameField.value;
+  overlayContainer.style.visibility = "hidden";
+  document.querySelector("#myname").innerHTML = `${username} (You)`;
+  socket.emit("join room", roomid, username);
+});
+
+nameField.addEventListener("keyup", function (event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    continueButt.click();
+  }
+});
+
+let peerConnection;
+
+function handleGetUserMediaError(e) {
+  switch (e.name) {
+    case "NotFoundError":
+      alert(
+        "Unable to open your call because no camera and/or microphone" +
+          "were found."
+      );
+      break;
+    case "SecurityError":
+    case "PermissionDeniedError":
+      break;
+    default:
+      alert("Error opening your camera and/or microphone: " + e.message);
+      break;
+  }
+}
+
+function reportError(e) {
+  console.log(e);
+  return;
+}
+
+cameraDropdown.addEventListener("change", () => {
+  const selectedCamera = cameraDropdown.value;
+  switchCamera(selectedCamera);
+});
+
+function switchCamera(deviceId) {
+  mediaConstraints.video = { deviceId: { exact: deviceId } };
+  navigator.mediaDevices
+    .getUserMedia(mediaConstraints)
+    .then((localstream) => {
+      myvideo1.srcObject = localstream;
+    })
+    .catch((error) => {
+      console.error("Error accessing camera:", error);
+    });
+}
+
+function startCall() {
+  navigator.mediaDevices
+    .getUserMedia(mediaConstraints)
+    .then((localStream) => {
+      myvideo1.srcObject = localStream;
+      myvideo1.muted = true;
+
+      localStream.getTracks().forEach((track) => {
+        for (let key in connections) {
+          connections[key].addTrack(track, localStream);
+          if (track.kind === "audio") audioTrackSent[key] = track;
+          else videoTrackSent[key] = track;
+        }
+      });
+    })
+    .catch(handleGetUserMediaError);
+}
+
+screenShareButt.addEventListener("click", () => {
+  screenShareToggle();
+});
+let screenshareEnabled = false;
+function screenShareToggle() {
+  let screenMediaPromise;
+  if (!screenshareEnabled) {
+    if (navigator.getDisplayMedia) {
+      screenMediaPromise = navigator.getDisplayMedia({ video: true });
+    } else if (navigator.mediaDevices.getDisplayMedia) {
+      screenMediaPromise = navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      });
+    } else {
+      screenMediaPromise = navigator.mediaDevices.getUserMedia({
+        video: { mediaSource: "screen" },
+      });
+    }
+  } else {
+    screenMediaPromise = navigator.mediaDevices.getUserMedia({ video: true });
+  }
+  screenMediaPromise
+    .then((myscreenshare) => {
+      screenshareEnabled = !screenshareEnabled;
+      for (let key in connections) {
+        const sender = connections[key]
+          .getSenders()
+          .find((s) => (s.track ? s.track.kind === "video" : false));
+        sender.replaceTrack(myscreenshare.getVideoTracks()[0]);
+      }
+      myscreenshare.getVideoTracks()[0].enabled = true;
+      const newStream = new MediaStream([myscreenshare.getVideoTracks()[0]]);
+      myvideo1.srcObject = newStream;
+      myvideo1.muted = true;
+      mystream = newStream;
+      screenShareButt.innerHTML = screenshareEnabled
+        ? `<i class="fas fa-desktop"></i><span class="tooltiptext">Stop Share Screen</span>`
+        : `<i class="fas fa-desktop"></i><span class="tooltiptext">Share Screen</span>`;
+      myscreenshare.getVideoTracks()[0].onended = function () {
+        if (screenshareEnabled) screenShareToggle();
+      };
+    })
+    .catch((e) => {
+      alert("Unable to share screen:" + e.message);
+      console.error(e);
+    });
+}
+
+sendButton.addEventListener("click", () => {
+  const msg = messageField.value;
+  messageField.value = "";
+  socket.emit("message", msg, username, roomid);
+});
+
+messageField.addEventListener("keyup", function (event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    sendButton.click();
+  }
+});
+
+videoButt.addEventListener("click", () => {
+  if (videoAllowed) {
+    for (let key in videoTrackSent) {
+      videoTrackSent[key].enabled = false;
+    }
+    videoButt.innerHTML = `<i class="fas fa-video-slash"></i>`;
+    videoAllowed = 0;
+    videoButt.style.backgroundColor = "#b12c2c";
+
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "video") {
+          track.enabled = false;
+        }
+      });
+    }
+
+    myvideooff.style.visibility = "visible";
+
+    socket.emit("action", "videooff");
+  } else {
+    for (let key in videoTrackSent) {
+      videoTrackSent[key].enabled = true;
+    }
+    videoButt.innerHTML = `<i class="fas fa-video"></i>`;
+    videoAllowed = 1;
+    videoButt.style.backgroundColor = "#4ECCA3";
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "video") track.enabled = true;
+      });
+    }
+
+    myvideooff.style.visibility = "hidden";
+
+    socket.emit("action", "videoon");
+  }
+});
+
+audioButt.addEventListener("click", () => {
+  if (audioAllowed) {
+    for (let key in audioTrackSent) {
+      audioTrackSent[key].enabled = false;
+    }
+    audioButt.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
+    audioAllowed = 0;
+    audioButt.style.backgroundColor = "#b12c2c";
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "audio") track.enabled = false;
+      });
+    }
+
+    mymuteicon.style.visibility = "visible";
+
+    socket.emit("action", "mute");
+  } else {
+    for (let key in audioTrackSent) {
+      audioTrackSent[key].enabled = true;
+    }
+    audioButt.innerHTML = `<i class="fas fa-microphone"></i>`;
+    audioAllowed = 1;
+    audioButt.style.backgroundColor = "#4ECCA3";
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "audio") track.enabled = true;
+      });
+    }
+
+    mymuteicon.style.visibility = "hidden";
+
+    socket.emit("action", "unmute");
+  }
+});
+
+whiteboardButt.addEventListener("click", () => {
+  if (boardVisisble) {
+    whiteboardCont.style.visibility = "hidden";
+    boardVisisble = false;
+  } else {
+    whiteboardCont.style.visibility = "visible";
+    boardVisisble = true;
+  }
+});
+
+cutCall.addEventListener("click", () => {
+  location.href = "/";
+});
