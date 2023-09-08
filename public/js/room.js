@@ -501,3 +501,19 @@ whiteboardButt.addEventListener("click", () => {
 cutCall.addEventListener("click", () => {
   location.href = "/";
 });
+
+// Added socket events
+
+socket.on("action", handleCallActions);
+
+socket.on("user count", handleVideoContainer);
+
+socket.on("video-offer", handleVideoOffer);
+
+socket.on("new icecandidate", handleNewIceCandidate);
+
+socket.on("video-answer", handleVideoAnswer);
+
+socket.on("join room", handleRoomJoin);
+
+socket.on("remove peer", handleRemovePeer);
