@@ -521,6 +521,15 @@ function handleCallActions(msg, sid) {
     videoInfo[sid] = "on";
   }
 }
+
+function handleVideoContainer(count) {
+  if (count > 1) {
+    videoContainer.className = "video-cont";
+  } else {
+    videoContainer.className = "video-cont-single";
+  }
+}
+
 // Added socket events
 
 socket.on("action", handleCallActions);
