@@ -634,6 +634,13 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf) {
     .catch(handleGetUserMediaError);
 }
 
+function handleNewIceCandidate(candidate, sid) {
+  console.log("new candidate recieved");
+  var newcandidate = new RTCIceCandidate(candidate);
+
+  connections[sid].addIceCandidate(newcandidate).catch(reportError);
+}
+
 // Added socket events
 
 socket.on("action", handleCallActions);
