@@ -641,6 +641,12 @@ function handleNewIceCandidate(candidate, sid) {
   connections[sid].addIceCandidate(newcandidate).catch(reportError);
 }
 
+function handleVideoAnswer(answer, sid) {
+  console.log("answered the offer");
+  const ans = new RTCSessionDescription(answer);
+  connections[sid].setRemoteDescription(ans);
+}
+
 // Added socket events
 
 socket.on("action", handleCallActions);
