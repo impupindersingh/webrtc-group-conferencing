@@ -12,6 +12,45 @@ const io = socketio(server);
 
 app.use(express.static(path.join(__dirname, "public")));
 
+let rooms = {};
+let socketroom = {};
+let socketname = {};
+let micSocket = {};
+let videoSocket = {};
+
+io.on("connect", (socket) => {
+  socket.on("join room", (roomid, username) => {
+    socket.join(roomid);
+    socketroom[socket.id] = roomid;
+    socketname[socket.id] = username;
+    micSocket[socket.id] = "on";
+    videoSocket[socket.id] = "on";
+
+    if (rooms[roomid] && rooms[roomid].length > 0) {
+      rooms[roomid].push(socket.id);
+      socket
+        .to(roomid)
+        .emit(
+          "message",
+          `${username} joined the room.`,
+          "Bot",
+          moment().format("h:mm a")
+        );
+      io.to(socket.id).emit(
+        "join room",
+        rooms[roomid].filter((pid) => pid != socket.id),
+        socketname,
+        micSocket,
+        videoSocket
+      );
+    } else {
+      rooms[roomid] = [socket.id];
+      io.to(socket.id).emit("join room", null, null, null, null);
+    }
+
+    io.to(roomid).emit("user count", rooms[roomid].length);
+  });
+});
 server.listen(PORT, () =>
   console.log(`Server is up and running on port ${PORT}`)
 );
