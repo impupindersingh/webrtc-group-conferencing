@@ -72,7 +72,10 @@ io.on("connect", (socket) => {
         videoSocket[socket.id]
       );
   });
-  
+
+  socket.on("video-answer", (answer, sid) => {
+    socket.to(sid).emit("video-answer", answer, socket.id);
+  });
 });
 server.listen(PORT, () =>
   console.log(`Server is up and running on port ${PORT}`)
