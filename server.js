@@ -76,6 +76,10 @@ io.on("connect", (socket) => {
   socket.on("video-answer", (answer, sid) => {
     socket.to(sid).emit("video-answer", answer, socket.id);
   });
+
+  socket.on("new icecandidate", (candidate, sid) => {
+    socket.to(sid).emit("new icecandidate", candidate, socket.id);
+  });
 });
 server.listen(PORT, () =>
   console.log(`Server is up and running on port ${PORT}`)
