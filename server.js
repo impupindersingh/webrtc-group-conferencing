@@ -59,6 +59,20 @@ io.on("connect", (socket) => {
 
     socket.to(socketroom[socket.id]).emit("action", msg, socket.id);
   });
+
+  socket.on("video-offer", (offer, sid) => {
+    socket
+      .to(sid)
+      .emit(
+        "video-offer",
+        offer,
+        socket.id,
+        socketname[socket.id],
+        micSocket[socket.id],
+        videoSocket[socket.id]
+      );
+  });
+  
 });
 server.listen(PORT, () =>
   console.log(`Server is up and running on port ${PORT}`)
