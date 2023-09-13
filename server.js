@@ -80,6 +80,30 @@ io.on("connect", (socket) => {
   socket.on("new icecandidate", (candidate, sid) => {
     socket.to(sid).emit("new icecandidate", candidate, socket.id);
   });
+
+  socket.on("disconnect", () => {
+    if (!socketroom[socket.id]) return;
+    socket
+      .to(socketroom[socket.id])
+      .emit(
+        "message",
+        `${socketname[socket.id]} left the chat.`,
+        `Bot`,
+        moment().format("h:mm a")
+      );
+    socket.to(socketroom[socket.id]).emit("remove peer", socket.id);
+    var index = rooms[socketroom[socket.id]].indexOf(socket.id);
+    rooms[socketroom[socket.id]].splice(index, 1);
+    io.to(socketroom[socket.id]).emit(
+      "user count",
+      rooms[socketroom[socket.id]].length
+    );
+    delete socketroom[socket.id];
+    console.log("--------------------");
+    console.log(rooms[socketroom[socket.id]]);
+
+    //   toDo: push socket.id out of rooms
+  });
 });
 server.listen(PORT, () =>
   console.log(`Server is up and running on port ${PORT}`)
