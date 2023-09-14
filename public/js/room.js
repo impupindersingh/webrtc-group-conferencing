@@ -292,6 +292,14 @@ nameField.addEventListener("keyup", function (event) {
     continueButt.click();
   }
 });
+//////////////////////////////////////////////////////////////
+socket.on("user count", (count) => {
+  if (count > 1) {
+    videoContainer.className = "video-cont";
+  } else {
+    videoContainer.className = "video-cont-single";
+  }
+});
 
 let peerConnection;
 
@@ -316,7 +324,6 @@ function reportError(e) {
   console.log(e);
   return;
 }
-
 cameraDropdown.addEventListener("change", () => {
   const selectedCamera = cameraDropdown.value;
   switchCamera(selectedCamera);
@@ -350,184 +357,6 @@ function startCall() {
       });
     })
     .catch(handleGetUserMediaError);
-}
-
-screenShareButt.addEventListener("click", () => {
-  screenShareToggle();
-});
-let screenshareEnabled = false;
-function screenShareToggle() {
-  let screenMediaPromise;
-  if (!screenshareEnabled) {
-    if (navigator.getDisplayMedia) {
-      screenMediaPromise = navigator.getDisplayMedia({ video: true });
-    } else if (navigator.mediaDevices.getDisplayMedia) {
-      screenMediaPromise = navigator.mediaDevices.getDisplayMedia({
-        video: true,
-      });
-    } else {
-      screenMediaPromise = navigator.mediaDevices.getUserMedia({
-        video: { mediaSource: "screen" },
-      });
-    }
-  } else {
-    screenMediaPromise = navigator.mediaDevices.getUserMedia({ video: true });
-  }
-  screenMediaPromise
-    .then((myscreenshare) => {
-      screenshareEnabled = !screenshareEnabled;
-      for (let key in connections) {
-        const sender = connections[key]
-          .getSenders()
-          .find((s) => (s.track ? s.track.kind === "video" : false));
-        sender.replaceTrack(myscreenshare.getVideoTracks()[0]);
-      }
-      myscreenshare.getVideoTracks()[0].enabled = true;
-      const newStream = new MediaStream([myscreenshare.getVideoTracks()[0]]);
-      myvideo1.srcObject = newStream;
-      myvideo1.muted = true;
-      mystream = newStream;
-      screenShareButt.innerHTML = screenshareEnabled
-        ? `<i class="fas fa-desktop"></i><span class="tooltiptext">Stop Share Screen</span>`
-        : `<i class="fas fa-desktop"></i><span class="tooltiptext">Share Screen</span>`;
-      myscreenshare.getVideoTracks()[0].onended = function () {
-        if (screenshareEnabled) screenShareToggle();
-      };
-    })
-    .catch((e) => {
-      alert("Unable to share screen:" + e.message);
-      console.error(e);
-    });
-}
-
-sendButton.addEventListener("click", () => {
-  const msg = messageField.value;
-  messageField.value = "";
-  socket.emit("message", msg, username, roomid);
-});
-
-messageField.addEventListener("keyup", function (event) {
-  if (event.keyCode === 13) {
-    event.preventDefault();
-    sendButton.click();
-  }
-});
-
-videoButt.addEventListener("click", () => {
-  if (videoAllowed) {
-    for (let key in videoTrackSent) {
-      videoTrackSent[key].enabled = false;
-    }
-    videoButt.innerHTML = `<i class="fas fa-video-slash"></i>`;
-    videoAllowed = 0;
-    videoButt.style.backgroundColor = "#b12c2c";
-
-    if (mystream) {
-      mystream.getTracks().forEach((track) => {
-        if (track.kind === "video") {
-          track.enabled = false;
-        }
-      });
-    }
-
-    myvideooff.style.visibility = "visible";
-
-    socket.emit("action", "videooff");
-  } else {
-    for (let key in videoTrackSent) {
-      videoTrackSent[key].enabled = true;
-    }
-    videoButt.innerHTML = `<i class="fas fa-video"></i>`;
-    videoAllowed = 1;
-    videoButt.style.backgroundColor = "#4ECCA3";
-    if (mystream) {
-      mystream.getTracks().forEach((track) => {
-        if (track.kind === "video") track.enabled = true;
-      });
-    }
-
-    myvideooff.style.visibility = "hidden";
-
-    socket.emit("action", "videoon");
-  }
-});
-
-audioButt.addEventListener("click", () => {
-  if (audioAllowed) {
-    for (let key in audioTrackSent) {
-      audioTrackSent[key].enabled = false;
-    }
-    audioButt.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
-    audioAllowed = 0;
-    audioButt.style.backgroundColor = "#b12c2c";
-    if (mystream) {
-      mystream.getTracks().forEach((track) => {
-        if (track.kind === "audio") track.enabled = false;
-      });
-    }
-
-    mymuteicon.style.visibility = "visible";
-
-    socket.emit("action", "mute");
-  } else {
-    for (let key in audioTrackSent) {
-      audioTrackSent[key].enabled = true;
-    }
-    audioButt.innerHTML = `<i class="fas fa-microphone"></i>`;
-    audioAllowed = 1;
-    audioButt.style.backgroundColor = "#4ECCA3";
-    if (mystream) {
-      mystream.getTracks().forEach((track) => {
-        if (track.kind === "audio") track.enabled = true;
-      });
-    }
-
-    mymuteicon.style.visibility = "hidden";
-
-    socket.emit("action", "unmute");
-  }
-});
-
-whiteboardButt.addEventListener("click", () => {
-  if (boardVisisble) {
-    whiteboardCont.style.visibility = "hidden";
-    boardVisisble = false;
-  } else {
-    whiteboardCont.style.visibility = "visible";
-    boardVisisble = true;
-  }
-});
-
-cutCall.addEventListener("click", () => {
-  location.href = "/";
-});
-
-function handleCallActions(msg, sid) {
-  if (msg == "mute") {
-    console.log(sid + " muted themself");
-    document.querySelector(`#mute${sid}`).style.visibility = "visible";
-    micInfo[sid] = "off";
-  } else if (msg == "unmute") {
-    console.log(sid + " unmuted themself");
-    document.querySelector(`#mute${sid}`).style.visibility = "hidden";
-    micInfo[sid] = "on";
-  } else if (msg == "videooff") {
-    console.log(sid + "turned video off");
-    document.querySelector(`#vidoff${sid}`).style.visibility = "visible";
-    videoInfo[sid] = "off";
-  } else if (msg == "videoon") {
-    console.log(sid + "turned video on");
-    document.querySelector(`#vidoff${sid}`).style.visibility = "hidden";
-    videoInfo[sid] = "on";
-  }
-}
-
-function handleVideoContainer(count) {
-  if (count > 1) {
-    videoContainer.className = "video-cont";
-  } else {
-    videoContainer.className = "video-cont-single";
-  }
 }
 
 function handleVideoOffer(offer, sid, cname, micinf, vidinf) {
@@ -647,7 +476,63 @@ function handleVideoAnswer(answer, sid) {
   connections[sid].setRemoteDescription(ans);
 }
 
-async function handleRoomJoin(conc, cnames, micinfo, videoinfo) {
+//Thanks to (https://github.com/miroslavpejic85) for ScreenShare Code
+
+screenShareButt.addEventListener("click", () => {
+  screenShareToggle();
+});
+let screenshareEnabled = false;
+function screenShareToggle() {
+  let screenMediaPromise;
+  if (!screenshareEnabled) {
+    if (navigator.getDisplayMedia) {
+      screenMediaPromise = navigator.getDisplayMedia({ video: true });
+    } else if (navigator.mediaDevices.getDisplayMedia) {
+      screenMediaPromise = navigator.mediaDevices.getDisplayMedia({
+        video: true,
+      });
+    } else {
+      screenMediaPromise = navigator.mediaDevices.getUserMedia({
+        video: { mediaSource: "screen" },
+      });
+    }
+  } else {
+    screenMediaPromise = navigator.mediaDevices.getUserMedia({ video: true });
+  }
+  screenMediaPromise
+    .then((myscreenshare) => {
+      screenshareEnabled = !screenshareEnabled;
+      for (let key in connections) {
+        const sender = connections[key]
+          .getSenders()
+          .find((s) => (s.track ? s.track.kind === "video" : false));
+        sender.replaceTrack(myscreenshare.getVideoTracks()[0]);
+      }
+      myscreenshare.getVideoTracks()[0].enabled = true;
+      const newStream = new MediaStream([myscreenshare.getVideoTracks()[0]]);
+      myvideo1.srcObject = newStream;
+      myvideo1.muted = true;
+      mystream = newStream;
+      screenShareButt.innerHTML = screenshareEnabled
+        ? `<i class="fas fa-desktop"></i><span class="tooltiptext">Stop Share Screen</span>`
+        : `<i class="fas fa-desktop"></i><span class="tooltiptext">Share Screen</span>`;
+      myscreenshare.getVideoTracks()[0].onended = function () {
+        if (screenshareEnabled) screenShareToggle();
+      };
+    })
+    .catch((e) => {
+      alert("Unable to share screen:" + e.message);
+      console.error(e);
+    });
+}
+
+socket.on("video-offer", handleVideoOffer);
+
+socket.on("new icecandidate", handleNewIceCandidate);
+
+socket.on("video-answer", handleVideoAnswer);
+
+socket.on("join room", async (conc, cnames, micinfo, videoinfo) => {
   socket.emit("getCanvas");
   if (cnames) cName = cnames;
 
@@ -738,20 +623,147 @@ async function handleRoomJoin(conc, cnames, micinfo, videoinfo) {
       })
       .catch(handleGetUserMediaError);
   }
-}
+});
 
-// Added socket events
+socket.on("remove peer", (sid) => {
+  if (document.getElementById(sid)) {
+    document.getElementById(sid).remove();
+  }
 
-socket.on("action", handleCallActions);
+  delete connections[sid];
+});
 
-socket.on("user count", handleVideoContainer);
+sendButton.addEventListener("click", () => {
+  const msg = messageField.value;
+  messageField.value = "";
+  socket.emit("message", msg, username, roomid);
+});
 
-socket.on("video-offer", handleVideoOffer);
+messageField.addEventListener("keyup", function (event) {
+  if (event.keyCode === 13) {
+    event.preventDefault();
+    sendButton.click();
+  }
+});
 
-socket.on("new icecandidate", handleNewIceCandidate);
+socket.on("message", (msg, sendername, time) => {
+  chatRoom.scrollTop = chatRoom.scrollHeight;
+  chatRoom.innerHTML += `<div class="message">
+    <div class="info">
+        <div class="username">${sendername}</div>
+        <div class="time">${time}</div>
+    </div>
+    <div class="content">
+        ${msg}
+    </div>
+</div>`;
+});
 
-socket.on("video-answer", handleVideoAnswer);
+videoButt.addEventListener("click", () => {
+  if (videoAllowed) {
+    for (let key in videoTrackSent) {
+      videoTrackSent[key].enabled = false;
+    }
+    videoButt.innerHTML = `<i class="fas fa-video-slash"></i>`;
+    videoAllowed = 0;
+    videoButt.style.backgroundColor = "#b12c2c";
 
-socket.on("join room", handleRoomJoin);
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "video") {
+          track.enabled = false;
+        }
+      });
+    }
 
-socket.on("remove peer", handleRemovePeer);
+    myvideooff.style.visibility = "visible";
+
+    socket.emit("action", "videooff");
+  } else {
+    for (let key in videoTrackSent) {
+      videoTrackSent[key].enabled = true;
+    }
+    videoButt.innerHTML = `<i class="fas fa-video"></i>`;
+    videoAllowed = 1;
+    videoButt.style.backgroundColor = "#4ECCA3";
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "video") track.enabled = true;
+      });
+    }
+
+    myvideooff.style.visibility = "hidden";
+
+    socket.emit("action", "videoon");
+  }
+});
+
+audioButt.addEventListener("click", () => {
+  if (audioAllowed) {
+    for (let key in audioTrackSent) {
+      audioTrackSent[key].enabled = false;
+    }
+    audioButt.innerHTML = `<i class="fas fa-microphone-slash"></i>`;
+    audioAllowed = 0;
+    audioButt.style.backgroundColor = "#b12c2c";
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "audio") track.enabled = false;
+      });
+    }
+
+    mymuteicon.style.visibility = "visible";
+
+    socket.emit("action", "mute");
+  } else {
+    for (let key in audioTrackSent) {
+      audioTrackSent[key].enabled = true;
+    }
+    audioButt.innerHTML = `<i class="fas fa-microphone"></i>`;
+    audioAllowed = 1;
+    audioButt.style.backgroundColor = "#4ECCA3";
+    if (mystream) {
+      mystream.getTracks().forEach((track) => {
+        if (track.kind === "audio") track.enabled = true;
+      });
+    }
+
+    mymuteicon.style.visibility = "hidden";
+
+    socket.emit("action", "unmute");
+  }
+});
+
+socket.on("action", (msg, sid) => {
+  if (msg == "mute") {
+    console.log(sid + " muted themself");
+    document.querySelector(`#mute${sid}`).style.visibility = "visible";
+    micInfo[sid] = "off";
+  } else if (msg == "unmute") {
+    console.log(sid + " unmuted themself");
+    document.querySelector(`#mute${sid}`).style.visibility = "hidden";
+    micInfo[sid] = "on";
+  } else if (msg == "videooff") {
+    console.log(sid + "turned video off");
+    document.querySelector(`#vidoff${sid}`).style.visibility = "visible";
+    videoInfo[sid] = "off";
+  } else if (msg == "videoon") {
+    console.log(sid + "turned video on");
+    document.querySelector(`#vidoff${sid}`).style.visibility = "hidden";
+    videoInfo[sid] = "on";
+  }
+});
+
+whiteboardButt.addEventListener("click", () => {
+  if (boardVisisble) {
+    whiteboardCont.style.visibility = "hidden";
+    boardVisisble = false;
+  } else {
+    whiteboardCont.style.visibility = "visible";
+    boardVisisble = true;
+  }
+});
+
+cutCall.addEventListener("click", () => {
+  location.href = "/";
+});
