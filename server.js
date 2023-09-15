@@ -12,6 +12,13 @@ const io = socketio(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+function getUrlParameter(name, url) {
+  name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+  let regex = new RegExp('[\\#&]' + name + '=([^&#]*)');
+  let results = regex.exec(url);
+  return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, '    '));
+};
+
 let rooms = {};
 let socketroom = {};
 let socketname = {};
@@ -28,17 +35,19 @@ io.on('connect', socket => {
         socketname[socket.id] = username;
         micSocket[socket.id] = 'on';
         videoSocket[socket.id] = 'on';
+        let isHost = getUrlParameter("host", socket.request.headers.referer);
+
 
         if (rooms[roomid] && rooms[roomid].length > 0) {
             rooms[roomid].push(socket.id);
             socket.to(roomid).emit('message', `${username} joined the room.`, 'Bot', moment().format(
                 "h:mm a"
             ));
-            io.to(socket.id).emit('join room', rooms[roomid].filter(pid => pid != socket.id), socketname, micSocket, videoSocket);
+            io.to(socket.id).emit('join room', rooms[roomid].filter(pid => pid != socket.id), socketname, micSocket, videoSocket, isHost);
         }
         else {
             rooms[roomid] = [socket.id];
-            io.to(socket.id).emit('join room', null, null, null, null);
+            io.to(socket.id).emit('join room', null, null, null, null, isHost);
         }
 
         io.to(roomid).emit('user count', rooms[roomid].length);

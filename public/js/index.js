@@ -87,7 +87,8 @@ createButton.addEventListener("click", (e) => {
       );
     }
   }, 500);
-  location.href = `/room.html?room=${uuidv4()}`;
+  
+  location.href = `/room.html?room=${uuidv4()}&host=true`;
 });
 
 joinButton.addEventListener("click", (e) => {

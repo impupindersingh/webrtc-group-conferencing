@@ -269,7 +269,7 @@ function startCall() {
 
 }
 
-function handleVideoOffer(offer, sid, cname, micinf, vidinf) {
+function handleVideoOffer(offer, sid, cname, micinf, vidinf, isHost) {
 
     cName[sid] = cname;
     console.log('video offered recevied');
@@ -324,8 +324,12 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf) {
             vidCont.appendChild(muteIcon);
             vidCont.appendChild(videoOff);
 
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            const getHost = urlParams.get("host");
+            if (!getHost && !isHost) {
             videoContainer.appendChild(vidCont);
-
+            }
         }
 
 
@@ -460,7 +464,7 @@ socket.on('new icecandidate', handleNewIceCandidate);
 socket.on('video-answer', handleVideoAnswer);
 
 
-socket.on('join room', async (conc, cnames, micinfo, videoinfo) => {
+socket.on('join room', async (conc, cnames, micinfo, videoinfo, isHost) => {
     socket.emit('getCanvas');
     if (cnames)
         cName = cnames;
@@ -471,6 +475,7 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo) => {
     if (videoinfo)
         videoInfo = videoinfo;
 
+    console.log("is Host ☺", isHost);
 
     console.log(cName);
     if (conc) {
@@ -524,7 +529,12 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo) => {
                     vidCont.appendChild(muteIcon);
                     vidCont.appendChild(videoOff);
 
-                    videoContainer.appendChild(vidCont);
+                    const queryString = window.location.search;
+                    const urlParams = new URLSearchParams(queryString);
+                    const getHost = urlParams.get("host");
+                    if (!getHost && !isHost) {
+                        videoContainer.appendChild(vidCont);
+                    }
 
                 }
 
